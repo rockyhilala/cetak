@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Antrian Print - TV Display</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      padding: 40px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1 {
+      color: white;
+      font-size: 48px;
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    h1 i { margin-right: 15px; }
+    .queue-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 20px;
+    }
+    .queue-card {
+      background: white;
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      transition: transform 0.3s;
+      animation: fadeIn 0.5s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .queue-number {
+      font-size: 48px;
+      font-weight: 800;
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+    .queue-name {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 15px;
+    }
+    .queue-details {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+      padding: 15px 0;
+      border-top: 1px solid #eee;
+      border-bottom: 1px solid #eee;
+    }
+    .detail {
+      text-align: center;
+    }
+    .detail-label {
+      font-size: 12px;
+      color: #999;
+      text-transform: uppercase;
+    }
+    .detail-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #333;
+    }
+    .status-payment {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 30px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .status-lunas { background: #d4edda; color: #155724; }
+    .status-belum { background: #f8d7da; color: #721c24; }
+    .empty-state {
+      text-align: center;
+      padding: 60px;
+      background: white;
+      border-radius: 24px;
+    }
+    .empty-state i { font-size: 64px; color: #ccc; margin-bottom: 20px; }
+    .empty-state p { font-size: 24px; color: #999; }
+    .footer {
+      text-align: center;
+      color: rgba(255,255,255,0.5);
+      margin-top: 40px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1><i class="fas fa-print"></i> Antrian Cetak</h1>
+  <div id="queueContainer" class="queue-grid">
+    <div class="empty-state"><i class="fas fa-hourglass-half"></i><p>Memuat antrian...</p></div>
+  </div>
+  <div class="footer">
+    <i class="fas fa-sync-alt fa-fw"></i> Data otomatis refresh setiap 10 detik
+  </div>
+</div>
+
+<script>
+const API_BASE_URL = '3CtNeFD9Gjm7NtynzhipfPeJZYW_832HG3ZXpJbTL45nw6v1T'; // <-- GANTI INI!
+
+async function loadQueue() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/queue`);
+    const queue = await res.json();
+    
+    const container = document.getElementById('queueContainer');
+    
+    if (queue.length === 0) {
+      container.innerHTML = `<div class="empty-state"><i class="fas fa-check-circle"></i><p>Tidak ada antrian saat ini</p></div>`;
+      return;
+    }
+    
+    container.innerHTML = queue.map((t, index) => `
+      <div class="queue-card">
+        <div class="queue-number">#${index + 1}</div>
+        <div class="queue-name">${t.nama}</div>
+        <div class="queue-details">
+          <div class="detail">
+            <div class="detail-label">Halaman</div>
+            <div class="detail-value">${t.totalHalaman}</div>
+          </div>
+          <div class="detail">
+            <div class="detail-label">Harga</div>
+            <div class="detail-value">Rp ${t.harga.toLocaleString('id-ID')}</div>
+          </div>
+          <div class="detail">
+            <div class="detail-label">Jenis</div>
+            <div class="detail-value">${t.jenisKonten}</div>
+          </div>
+        </div>
+        <div style="text-align: center;">
+          <span class="status-payment ${t.statusPembayaran === 'Lunas' ? 'status-lunas' : 'status-belum'}">
+            <i class="fas ${t.statusPembayaran === 'Lunas' ? 'fa-check-circle' : 'fa-clock'}"></i>
+            ${t.statusPembayaran}
+          </span>
+        </div>
+      </div>
+    `).join('');
+  } catch(err) {
+    document.getElementById('queueContainer').innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Gagal memuat data: ${err.message}</p></div>`;
+  }
+}
+
+loadQueue();
+setInterval(loadQueue, 10000);
+</script>
+</body>
+</html>
