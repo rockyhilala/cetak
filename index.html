@@ -1,443 +1,586 @@
 <!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Print Kiosk - Upload Dokumen</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      padding: 40px 20px;
-    }
-    .container { max-width: 700px; margin: 0 auto; }
-    .header { text-align: center; margin-bottom: 30px; }
-    .header-icon {
-      background: rgba(255,255,255,0.2);
-      width: 80px; height: 80px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 20px;
-    }
-    .header-icon i { font-size: 40px; color: white; }
-    h1 { color: white; font-size: 32px; margin-bottom: 8px; }
-    .subtitle { color: rgba(255,255,255,0.9); font-size: 16px; }
-    .card {
-      background: white;
-      border-radius: 24px;
-      padding: 32px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-      margin-bottom: 20px;
-    }
-    .form-group { margin-bottom: 24px; }
-    label {
-      display: block;
-      font-weight: 600;
-      color: #333;
-      margin-bottom: 8px;
-      font-size: 14px;
-      text-transform: uppercase;
-    }
-    label i { margin-right: 8px; color: #667eea; }
-    input, select {
-      width: 100%;
-      padding: 14px 16px;
-      font-size: 16px;
-      border: 2px solid #e0e0e0;
-      border-radius: 12px;
-      font-family: 'Inter', sans-serif;
-      transition: all 0.3s ease;
-    }
-    input:focus, select:focus {
-      outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
-    }
-    input[readonly] {
-      background: #e8f5e9;
-      border-color: #4caf50;
-      color: #2e7d32;
-    }
-    .file-upload-area {
-      border: 2px dashed #ccc;
-      border-radius: 12px;
-      padding: 30px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      background: #fafafa;
-    }
-    .file-upload-area:hover {
-      border-color: #667eea;
-      background: #f5f3ff;
-    }
-    .file-upload-area i { font-size: 48px; color: #667eea; margin-bottom: 12px; }
-    .file-upload-area p { color: #666; font-size: 14px; }
-    .file-upload-area .file-name { margin-top: 10px; color: #667eea; font-weight: 500; }
-    #fileUpload { display: none; }
-    .harga-card {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 16px;
-      padding: 20px;
-      margin: 24px 0;
-      text-align: center;
-    }
-    .harga-label { color: rgba(255,255,255,0.9); font-size: 14px; margin-bottom: 8px; }
-    #hargaEstimasi { font-size: 42px; font-weight: 800; color: white; }
-    .btn-submit, .btn-payment {
-      width: 100%;
-      padding: 16px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-    .btn-submit:hover, .btn-payment:hover { transform: translateY(-2px); }
-    .btn-cash { background: linear-gradient(135deg, #4caf50 0%, #45a049 100%); }
-    .btn-qris { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); }
-    .hidden { display: none; }
-    .qr-payment {
-      text-align: center;
-      padding: 20px;
-      background: #f8f9fa;
-      border-radius: 16px;
-      margin-top: 16px;
-    }
-    .qr-payment img { width: 200px; height: 200px; margin: 10px auto; }
-    .note { font-size: 12px; color: #999; margin-top: 6px; display: block; }
-    .loading {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.7);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-    .loading .spinner {
-      background: white;
-      padding: 30px;
-      border-radius: 20px;
-      text-align: center;
-    }
-    .spinner i { font-size: 40px; color: #667eea; animation: spin 1s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .alert {
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 16px;
-    }
-    .alert-success { background: #d4edda; color: #155724; border-left: 4px solid #28a745; }
-    .alert-error { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; }
-    .alert-info { background: #d1ecf1; color: #0c5460; border-left: 4px solid #17a2b8; }
-  </style>
-</head>
-<body>
-<div class="container">
-  <div class="header">
-    <div class="header-icon"><i class="fas fa-print"></i></div>
-    <h1>Print Kiosk</h1>
-    <p class="subtitle">Upload dokumen & pilih metode pembayaran</p>
-  </div>
-
-  <div class="card">
-    <div id="alertMessage" class="hidden"></div>
-    
-    <form id="uploadForm">
-      <div class="form-group">
-        <label><i class="fas fa-user"></i> Nama Panggilan</label>
-        <input type="text" id="namaPendek" required maxlength="20" placeholder="Contoh: Budi">
-      </div>
-      
-      <div class="form-group">
-        <label><i class="fas fa-file-alt"></i> Jenis Konten</label>
-        <select id="jenisKonten" required>
-          <option value="">-- Pilih Jenis --</option>
-          <option value="Teks">📄 Teks</option>
-          <option value="Gambar">🖼️ Gambar</option>
-          <option value="Campuran">🎨 Campuran</option>
-        </select>
-      </div>
-      
-      <div class="form-group">
-        <label><i class="fas fa-copy"></i> Total Halaman</label>
-        <input type="number" id="totalHalaman" min="1" value="1" required>
-      </div>
-      
-      <div class="form-group hidden" id="divJmlGambar">
-        <label><i class="fas fa-image"></i> Jumlah Halaman Bergambar</label>
-        <input type="number" id="jmlHalamanBergambar" min="0" value="0">
-      </div>
-      
-      <div class="form-group">
-        <label><i class="fas fa-cloud-upload-alt"></i> Upload Berkas</label>
-        <div class="file-upload-area" id="fileUploadArea">
-          <i class="fas fa-cloud-upload-alt"></i>
-          <p>Klik atau drag & drop file di sini</p>
-          <p class="note">PDF, JPG, PNG (Max 10MB)</p>
-          <div id="fileNameDisplay" class="file-name"></div>
-        </div>
-        <input type="file" id="fileUpload" accept=".pdf,.jpg,.jpeg,.png">
-      </div>
-      
-      <div class="harga-card">
-        <div class="harga-label">Estimasi Harga</div>
-        <div id="hargaEstimasi">Rp 0</div>
-      </div>
-      
-      <button type="button" class="btn-submit btn-cash" id="cashBtn">
-        <i class="fas fa-money-bill-wave"></i> Bayar Tunai & Cetak Sekarang
-      </button>
-      
-      <button type="button" class="btn-submit btn-qris" id="qrisBtn">
-        <i class="fas fa-qrcode"></i> Bayar QRIS
-      </button>
-    </form>
-    
-    <div id="qrPaymentSection" class="qr-payment hidden">
-      <i class="fas fa-qrcode" style="font-size: 48px; color: #ff9800;"></i>
-      <h3>Scan QRIS untuk Membayar</h3>
-      <img id="qrisImage" src="" alt="QRIS">
-      <p class="note">Setelah pembayaran, admin akan memproses cetakan Anda</p>
-      <button class="btn-submit" id="backBtn" style="background: #6c757d; margin-top: 12px;">
-        <i class="fas fa-arrow-left"></i> Kembali
-      </button>
-    </div>
-  </div>
-</div>
-
-<div id="loading" class="loading hidden">
-  <div class="spinner">
-    <i class="fas fa-spinner fa-spin"></i>
-    <p>Memproses...</p>
-  </div>
-</div>
-
-<script>
-// KONFIGURASI - GANTI DENGAN URL NGROK ANDA
-const API_BASE_URL = 'https://unflawed-girdle-critter.ngrok-free.dev';
-
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-
-// QRIS Statis (ganti dengan QRIS asli Anda)
-const STATIC_QRIS = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=QRIS_STATIC_ANDRE';
-
-// Elemen
-const fileUploadArea = document.getElementById('fileUploadArea');
-const fileInput = document.getElementById('fileUpload');
-const fileNameDisplay = document.getElementById('fileNameDisplay');
-const jenisKonten = document.getElementById('jenisKonten');
-const totalHalaman = document.getElementById('totalHalaman');
-const jmlGambar = document.getElementById('jmlHalamanBergambar');
-const divJmlGambar = document.getElementById('divJmlGambar');
-const hargaEstimasi = document.getElementById('hargaEstimasi');
-const cashBtn = document.getElementById('cashBtn');
-const qrisBtn = document.getElementById('qrisBtn');
-const qrSection = document.getElementById('qrPaymentSection');
-const uploadForm = document.getElementById('uploadForm');
-const alertDiv = document.getElementById('alertMessage');
-
-// Upload area
-fileUploadArea.addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', (e) => {
-  if (e.target.files.length > 0) {
-    fileNameDisplay.innerHTML = `<i class="fas fa-check-circle"></i> ${e.target.files[0].name}`;
-    fileUploadArea.style.borderColor = '#4caf50';
-    detectFilePages(e.target.files[0]);
-  } else {
-    fileNameDisplay.innerHTML = '';
-    fileUploadArea.style.borderColor = '#ccc';
-  }
-});
-
-// Deteksi halaman PDF
-async function detectFilePages(file) {
-  if (!file) return;
-  if (file.type === 'application/pdf') {
-    try {
-      const reader = new FileReader();
-      reader.onload = async (ev) => {
-        const typedarray = new Uint8Array(ev.target.result);
-        const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
-        totalHalaman.value = pdf.numPages;
-        totalHalaman.readOnly = true;
-        totalHalaman.style.backgroundColor = '#e8f5e9';
-        hitungHarga();
-      };
-      reader.readAsArrayBuffer(file);
-    } catch(err) {
-      totalHalaman.readOnly = false;
-      hitungHarga();
-    }
-  } else if (file.type.startsWith('image/')) {
-    totalHalaman.value = 1;
-    totalHalaman.readOnly = true;
-    totalHalaman.style.backgroundColor = '#e3f2fd';
-    hitungHarga();
-  } else {
-    totalHalaman.readOnly = false;
-    hitungHarga();
-  }
-}
-
-function hitungHarga() {
-  const jenis = jenisKonten.value;
-  let total = parseInt(totalHalaman.value) || 1;
-  let gambar = parseInt(jmlGambar.value) || 0;
-  
-  if (total < 1) total = 1;
-  
-  let hargaTeks = 0, hargaGambar = 0;
-  if (total <= 10) { hargaTeks = 2000; hargaGambar = 2500; }
-  else if (total <= 50) { hargaTeks = 1500; hargaGambar = 2000; }
-  else { hargaTeks = 1000; hargaGambar = 1500; }
-  
-  let totalHarga = 0;
-  if (jenis === 'Teks') totalHarga = total * hargaTeks;
-  else if (jenis === 'Gambar') totalHarga = total * hargaGambar;
-  else if (jenis === 'Campuran') {
-    const teks = total - gambar;
-    totalHarga = (teks * hargaTeks) + (gambar * hargaGambar);
-  }
-  
-  hargaEstimasi.innerHTML = 'Rp ' + totalHarga.toLocaleString('id-ID');
-  return totalHarga;
-}
-
-jenisKonten.addEventListener('change', () => {
-  if (jenisKonten.value === 'Campuran') divJmlGambar.classList.remove('hidden');
-  else divJmlGambar.classList.add('hidden');
-  hitungHarga();
-});
-totalHalaman.addEventListener('input', hitungHarga);
-jmlGambar.addEventListener('input', hitungHarga);
-
-function showAlert(message, type) {
-  alertDiv.innerHTML = `<div class="alert alert-${type}"><i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i> ${message}</div>`;
-  alertDiv.classList.remove('hidden');
-  setTimeout(() => alertDiv.classList.add('hidden'), 5000);
-}
-
-async function processTransaction(metodePembayaran) {
-  console.log('1. Process started, metode:', metodePembayaran);
-  
-  const nama = document.getElementById('namaPendek').value.trim();
-  const jenis = jenisKonten.value;
-  const total = parseInt(totalHalaman.value);
-  const gambar = parseInt(jmlGambar.value) || 0;
-  const file = fileInput.files[0];
-  
-  console.log('2. Form data:', { nama, jenis, total, gambar, fileName: file?.name });
-  
-  if (!nama) { showAlert('Masukkan nama terlebih dahulu', 'error'); return; }
-  if (!jenis) { showAlert('Pilih jenis konten', 'error'); return; }
-  if (!file) { showAlert('Pilih file untuk diupload', 'error'); return; }
-  if (jenis === 'Campuran' && gambar > total) { showAlert('Jumlah gambar melebihi total halaman', 'error'); return; }
-  
-  const harga = hitungHarga();
-  console.log('3. Harga:', harga);
-  
-  const konfirmasi = confirm(`Apakah Anda akan mencetak ${total} halaman dengan harga Rp ${harga.toLocaleString('id-ID')}?\nMetode: ${metodePembayaran === 'Cash' ? 'Tunai (Langsung Cetak)' : 'QRIS (Tunggu Admin)'}`);
-  if (!konfirmasi) return;
-  
-  const loading = document.getElementById('loading');
-  loading.classList.remove('hidden');
-  
-  const formData = new FormData();
-  formData.append('namaPendek', nama);
-  formData.append('jenisKonten', jenis);
-  formData.append('totalHalaman', total);
-  formData.append('jmlHalamanBergambar', gambar);
-  formData.append('estimasiHarga', harga);
-  formData.append('metodePembayaran', metodePembayaran);
-  formData.append('file', file);
-  
-  console.log('4. Sending to:', `${API_BASE_URL}/api/upload`);
-  
-  // Tambahkan timeout 30 detik
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
-  
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/upload`, {
-      method: 'POST',
-      body: formData,
-      signal: controller.signal
-    });
-    
-    clearTimeout(timeoutId);
-    
-    console.log('5. Response status:', response.status);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    
-    const result = await response.json();
-    console.log('6. Result:', result);
-    
-    loading.classList.add('hidden');
-    
-    if (result.success) {
-      if (metodePembayaran === 'Cash') {
-        if (result.autoPrinted) {
-          showAlert(`✅ Transaksi berhasil! Cetakan sedang diproses. ID: ${result.transactionId}`, 'success');
-          setTimeout(() => location.reload(), 3000);
-        } else {
-          showAlert(`⚠️ Transaksi tersimpan. Mohon hubungi admin untuk cetak manual. ID: ${result.transactionId}`, 'info');
-        }
-      } else {
-        document.getElementById('qrisImage').src = STATIC_QRIS;
-        qrSection.classList.remove('hidden');
-        uploadForm.classList.add('hidden');
-        showAlert(`Silakan scan QRIS untuk membayar Rp ${harga.toLocaleString('id-ID')}. Admin akan memproses setelah pembayaran dikonfirmasi.`, 'info');
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Kiosk - Upload</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
       }
-    } else {
-      showAlert('Error: ' + (result.error || 'Unknown error'), 'error');
-    }
-  } catch(err) {
-    clearTimeout(timeoutId);
-    loading.classList.add('hidden');
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 40px 20px;
+      }
+
+      .container {
+        max-width: 680px;
+        margin: 0 auto;
+      }
+
+      /* Header */
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .header-icon {
+        background: rgba(255,255,255,0.2);
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        backdrop-filter: blur(10px);
+        animation: float 3s ease-in-out infinite;
+      }
+
+      .header-icon i {
+        font-size: 40px;
+        color: white;
+      }
+
+      @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+      }
+
+      h1 {
+        color: white;
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+      }
+
+      .subtitle {
+        color: rgba(255,255,255,0.9);
+        font-size: 16px;
+      }
+
+      /* Card */
+      .card {
+        background: white;
+        border-radius: 24px;
+        padding: 32px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        margin-bottom: 20px;
+      }
+
+      /* Form Groups */
+      .form-group {
+        margin-bottom: 24px;
+      }
+
+      label {
+        display: block;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      label i {
+        margin-right: 8px;
+        color: #667eea;
+      }
+
+      input, select {
+        width: 100%;
+        padding: 14px 16px;
+        font-size: 16px;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        font-family: 'Inter', sans-serif;
+        transition: all 0.3s ease;
+        background: #fafafa;
+      }
+
+      input:focus, select:focus {
+        outline: none;
+        border-color: #667eea;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+      }
+
+      input[readonly] {
+        background: #e8f5e9;
+        border-color: #4caf50;
+        color: #2e7d32;
+        font-weight: 500;
+      }
+
+      .note {
+        display: block;
+        font-size: 12px;
+        color: #999;
+        margin-top: 6px;
+      }
+
+      .note i {
+        margin-right: 4px;
+        font-size: 10px;
+      }
+
+      /* File Upload */
+      .file-upload-area {
+        border: 2px dashed #ccc;
+        border-radius: 12px;
+        padding: 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #fafafa;
+      }
+
+      .file-upload-area:hover {
+        border-color: #667eea;
+        background: #f5f3ff;
+      }
+
+      .file-upload-area i {
+        font-size: 48px;
+        color: #667eea;
+        margin-bottom: 12px;
+      }
+
+      .file-upload-area p {
+        color: #666;
+        font-size: 14px;
+      }
+
+      .file-upload-area .file-name {
+        margin-top: 10px;
+        color: #667eea;
+        font-weight: 500;
+        word-break: break-all;
+      }
+
+      #fileUpload {
+        display: none;
+      }
+
+      /* Harga Estimasi */
+      .harga-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 16px;
+        padding: 20px;
+        margin: 24px 0;
+        text-align: center;
+      }
+
+      .harga-label {
+        color: rgba(255,255,255,0.9);
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 8px;
+      }
+
+      #hargaEstimasi {
+        font-size: 42px;
+        font-weight: 800;
+        color: white;
+        margin: 0;
+        line-height: 1;
+      }
+
+      /* Tombol */
+      .btn-submit {
+        width: 100%;
+        padding: 16px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(102,126,234,0.3);
+      }
+
+      .btn-submit:active {
+        transform: translateY(0);
+      }
+
+      /* Loading */
+      .loading {
+        text-align: center;
+        padding: 40px;
+        background: white;
+        border-radius: 24px;
+      }
+
+      .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid #e0e0e0;
+        border-top-color: #667eea;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin: 0 auto 16px;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      /* Info hint */
+      .info-hint {
+        background: #e3f2fd;
+        border-left: 4px solid #2196f3;
+        padding: 12px;
+        border-radius: 8px;
+        margin-top: 8px;
+        font-size: 13px;
+        color: #1565c0;
+      }
+
+      .info-hint i {
+        margin-right: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div class="header-icon">
+          <i class="fas fa-print"></i>
+        </div>
+        <h1>Print Kiosk</h1>
+        <p class="subtitle">Upload dokumen Anda dengan mudah</p>
+      </div>
+
+      <div class="card">
+        <form id="uploadForm">
+          <!-- Nama Pendek -->
+          <div class="form-group">
+            <label><i class="fas fa-user"></i> Nama Panggilan</label>
+            <input type="text" name="namaPendek" required maxlength="20" placeholder="Contoh: Budi">
+            <span class="note"><i class="fas fa-info-circle"></i> Maksimal 20 karakter</span>
+          </div>
+          
+          <!-- Jenis Konten -->
+          <div class="form-group">
+            <label><i class="fas fa-file-alt"></i> Jenis Konten</label>
+            <select name="jenisKonten" id="jenisKonten" required>
+              <option value="">-- Pilih Jenis --</option>
+              <option value="Teks">📄 Teks</option>
+              <option value="Gambar">🖼️ Gambar</option>
+              <option value="Campuran">🎨 Campuran (Teks + Gambar)</option>
+            </select>
+          </div>
+          
+          <!-- Input Total Halaman -->
+          <div class="form-group">
+            <label><i class="fas fa-copy"></i> Total Halaman / Lembar</label>
+            <input type="number" name="totalHalaman" id="totalHalaman" min="1" value="1" required>
+            <span class="note"><i class="fas fa-magic"></i> Akan terisi otomatis jika file PDF</span>
+          </div>
+          
+          <!-- Input Jumlah Halaman Bergambar -->
+          <div class="form-group hidden" id="divJmlGambar">
+            <label><i class="fas fa-image"></i> Jumlah Halaman Bergambar</label>
+            <input type="number" name="jmlHalamanBergambar" id="jmlHalamanBergambar" min="0" value="0">
+            <span class="note"><i class="fas fa-exclamation-triangle"></i> Harus ≤ Total Halaman</span>
+          </div>
+          
+          <!-- Upload File -->
+          <div class="form-group">
+            <label><i class="fas fa-cloud-upload-alt"></i> Upload Berkas</label>
+            <div class="file-upload-area" id="fileUploadArea">
+              <i class="fas fa-cloud-upload-alt"></i>
+              <p>Klik atau drag & drop file di sini</p>
+              <p class="note" style="margin-top: 5px;">PDF, DOC, JPG, PNG (Max 10MB)</p>
+              <div id="fileNameDisplay" class="file-name"></div>
+            </div>
+            <input type="file" name="fileUpload" id="fileUpload" accept=".pdf,.doc,.docx,image/jpeg,image/png" required>
+            <div id="pageHint" class="info-hint hidden"></div>
+          </div>
+          
+          <!-- Estimasi Harga -->
+          <div class="harga-card">
+            <div class="harga-label">Estimasi Harga</div>
+            <div id="hargaEstimasi">Rp 0</div>
+          </div>
+          
+          <!-- Tombol Kirim -->
+          <button type="submit" class="btn-submit" id="submitBtn">
+            <i class="fas fa-qrcode"></i>
+            Proses & Dapatkan QR
+          </button>
+        </form>
+      </div>
+    </div>
     
-    console.error('FETCH ERROR:', err);
+    <!-- Tempat loading -->
+    <div id="loading" class="loading hidden">
+      <div class="spinner"></div>
+      <p>⏳ Memproses data Anda...</p>
+      <p style="font-size: 12px; color: #999; margin-top: 8px;">Mohon tunggu sebentar</p>
+    </div>
     
-    if (err.name === 'AbortError') {
-      showAlert('⏰ Koneksi timeout (30 detik). Server tidak merespon.', 'error');
-    } else if (err.message.includes('Failed to fetch')) {
-      showAlert('❌ Tidak dapat terhubung ke server. Pastikan backend menyala dan Ngrok berjalan.', 'error');
+   <script>
+  // File upload area handler
+  const fileUploadArea = document.getElementById('fileUploadArea');
+  const fileInput = document.getElementById('fileUpload');
+  const fileNameDisplay = document.getElementById('fileNameDisplay');
+
+  fileUploadArea.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+      fileNameDisplay.innerHTML = `<i class="fas fa-check-circle"></i> ${e.target.files[0].name}`;
+      fileUploadArea.style.borderColor = '#4caf50';
     } else {
-      showAlert('❌ Error: ' + err.message, 'error');
+      fileNameDisplay.innerHTML = '';
+      fileUploadArea.style.borderColor = '#ccc';
     }
+    // Trigger page detection
+    const changeEvent = new Event('change');
+    fileInput.dispatchEvent(changeEvent);
+  });
+
+  // ==== LOGIKA PERHITUNGAN HARGA =====
+  function hitungHarga(jenisKonten, totalHalaman, jmlGambar) {
+    let hargaPerLembarTeks = 0;
+    let hargaPerLembarGambar = 0;
+    
+    // Tentukan harga per lembar berdasarkan total halaman (tier)
+    if (totalHalaman <= 10) {
+      hargaPerLembarTeks = 2000;
+      hargaPerLembarGambar = 2500;
+    } else if (totalHalaman <= 50) {
+      hargaPerLembarTeks = 1500;
+      hargaPerLembarGambar = 2000;
+    } else {
+      hargaPerLembarTeks = 1000;
+      hargaPerLembarGambar = 1500;
+    }
+    
+    let totalHarga = 0;
+    if (jenisKonten === 'Teks') {
+      totalHarga = totalHalaman * hargaPerLembarTeks;
+    } else if (jenisKonten === 'Gambar') {
+      totalHarga = totalHalaman * hargaPerLembarGambar;
+    } else if (jenisKonten === 'Campuran') {
+      const halamanTeks = totalHalaman - jmlGambar;
+      totalHarga = (halamanTeks * hargaPerLembarTeks) + (jmlGambar * hargaPerLembarGambar);
+    }
+    return totalHarga;
   }
-}
+  
+  function updateHarga() {
+    const jenis = document.getElementById('jenisKonten').value;
+    let total = parseInt(document.getElementById('totalHalaman').value) || 1;
+    let jmlGambar = 0;
+    
+    // Validasi total halaman minimal 1
+    if (total < 1) {
+      total = 1;
+      document.getElementById('totalHalaman').value = 1;
+    }
+    
+    if (jenis === 'Campuran') {
+      jmlGambar = parseInt(document.getElementById('jmlHalamanBergambar').value) || 0;
+      if (jmlGambar > total) {
+        document.getElementById('jmlHalamanBergambar').value = total;
+        jmlGambar = total;
+      }
+    }
+    
+    const harga = hitungHarga(jenis, total, jmlGambar);
+    document.getElementById('hargaEstimasi').innerHTML = 'Rp ' + harga.toLocaleString('id-ID');
+    return harga;
+  }
+  
+  // Event listeners untuk update harga
+  document.getElementById('jenisKonten').addEventListener('change', function() {
+    const div = document.getElementById('divJmlGambar');
+    if (this.value === 'Campuran') {
+      div.classList.remove('hidden');
+    } else {
+      div.classList.add('hidden');
+    }
+    updateHarga(); // <-- Pastikan update harga dipanggil
+  });
+  
+  document.getElementById('totalHalaman').addEventListener('input', function() {
+    let value = parseInt(this.value) || 1;
+    if (value < 1) {
+      this.value = 1;
+      value = 1;
+    }
+    updateHarga(); // <-- Update harga setiap kali total halaman berubah
+  });
+  
+  document.getElementById('jmlHalamanBergambar').addEventListener('input', function() {
+    const total = parseInt(document.getElementById('totalHalaman').value) || 1;
+    let value = parseInt(this.value) || 0;
+    if (value > total) {
+      this.value = total;
+      value = total;
+    }
+    if (value < 0) {
+      this.value = 0;
+    }
+    updateHarga(); // <-- Update harga setiap kali jumlah gambar berubah
+  });
+  
+  // Deteksi halaman PDF (tetap sama)
+  document.getElementById('fileUpload').addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
 
-cashBtn.addEventListener('click', () => processTransaction('Cash'));
-qrisBtn.addEventListener('click', () => processTransaction('QRIS'));
-document.getElementById('backBtn').addEventListener('click', () => {
-  qrSection.classList.add('hidden');
-  uploadForm.classList.remove('hidden');
-  location.reload();
-});
+    const totalInput = document.getElementById('totalHalaman');
+    const hint = document.getElementById('pageHint');
 
-hitungHarga();
+    hint.classList.add('hidden');
+    hint.innerHTML = '';
+    totalInput.readOnly = false;
+    totalInput.style.backgroundColor = '';
+
+    if (file.type === 'application/pdf') {
+      try {
+        const reader = new FileReader();
+
+        reader.onload = async function(ev) {
+          const typedarray = new Uint8Array(ev.target.result);
+          const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+          const pages = pdf.numPages;
+
+          totalInput.value = pages;
+          totalInput.readOnly = true;
+          totalInput.style.backgroundColor = '#e8f5e9';
+
+          hint.innerHTML = '<i class="fas fa-check-circle"></i> ✅ PDF terdeteksi: ' + pages + ' halaman (otomatis)';
+          hint.classList.remove('hidden');
+          
+          updateHarga(); // <-- Update harga setelah deteksi PDF
+        };
+
+        reader.readAsArrayBuffer(file);
+
+      } catch (err) {
+        console.error(err);
+        hint.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ❌ Gagal membaca PDF. Isi manual.';
+        hint.classList.remove('hidden');
+        updateHarga(); // <-- Tetap update harga
+      }
+
+    } 
+    else if (file.type.startsWith('image/')) {
+      totalInput.value = 1;
+      totalInput.readOnly = true;
+      totalInput.style.backgroundColor = '#e3f2fd';
+      hint.innerHTML = '<i class="fas fa-image"></i> 🖼️ Gambar dihitung sebagai 1 halaman';
+      hint.classList.remove('hidden');
+      updateHarga(); // <-- Update harga setelah deteksi gambar
+    } 
+    else {
+      totalInput.value = 1;
+      totalInput.readOnly = false;
+      hint.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ⚠️ Format tidak didukung auto hitung. Isi manual.';
+      hint.classList.remove('hidden');
+      updateHarga(); // <-- Update harga
+    }
+  });
+  
+  // Submit form
+  document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const jenis = document.getElementById('jenisKonten').value;
+    const total = parseInt(document.getElementById('totalHalaman').value);
+    const jmlGambar = parseInt(document.getElementById('jmlHalamanBergambar').value) || 0;
+    
+    if (!jenis) {
+      alert('Pilih jenis konten terlebih dahulu.');
+      return;
+    }
+    
+    if (jenis === 'Campuran' && jmlGambar > total) {
+      alert('Jumlah halaman bergambar tidak boleh lebih dari total halaman.');
+      return;
+    }
+    
+    const fileInput = document.getElementById('fileUpload');
+    if (fileInput.files.length === 0) {
+      alert('Pilih file untuk diupload.');
+      return;
+    }
+    
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      const base64Data = ev.target.result.split(',')[1];
+      
+      const formData = {
+        namaPendek: document.querySelector('[name="namaPendek"]').value,
+        jenisKonten: jenis,
+        totalHalaman: total,
+        jmlHalamanBergambar: jmlGambar,
+        estimasiHarga: updateHarga() // <-- Ambil harga terbaru
+      };
+      
+      document.getElementById('loading').classList.remove('hidden');
+      document.querySelector('.card').style.opacity = '0.5';
+      
+      google.script.run
+        .withSuccessHandler(function(result) {
+          document.getElementById('loading').classList.add('hidden');
+          document.querySelector('.card').style.opacity = '1';
+          if (result.success) {
+            const successUrl = 'https://script.google.com/macros/s/AKfycbyV-jHg7SxnntO1m2WLVmtBhhtSdSMNt8DuiLY-927DK161lC3LIxpMU5MGtm5uhRcK/exec?page=success&id=' + result.transactionId;
+            window.top.location.href = successUrl;
+          } else {
+            alert('Gagal: ' + result.error);
+          }
+        })
+        .withFailureHandler(function(err) {
+          document.getElementById('loading').classList.add('hidden');
+          document.querySelector('.card').style.opacity = '1';
+          alert('Error: ' + err.message);
+        })
+        .processUpload(formData, {
+          data: base64Data,
+          name: file.name,
+          type: file.type
+        });
+    };
+    reader.readAsDataURL(file);
+  });
+  
+  // Inisialisasi harga saat halaman dimuat
+  updateHarga(); // <-- Pastikan harga ditampilkan saat pertama kali load
 </script>
-</body>
+  </body>
 </html>
