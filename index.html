@@ -337,11 +337,15 @@ function showAlert(message, type) {
 }
 
 async function processTransaction(metodePembayaran) {
+  console.log('1. Process started, metode:', metodePembayaran);
+  
   const nama = document.getElementById('namaPendek').value.trim();
   const jenis = jenisKonten.value;
   const total = parseInt(totalHalaman.value);
   const gambar = parseInt(jmlGambar.value) || 0;
   const file = fileInput.files[0];
+  
+  console.log('2. Form data:', { nama, jenis, total, gambar, fileName: file?.name });
   
   if (!nama) { showAlert('Masukkan nama terlebih dahulu', 'error'); return; }
   if (!jenis) { showAlert('Pilih jenis konten', 'error'); return; }
@@ -349,8 +353,8 @@ async function processTransaction(metodePembayaran) {
   if (jenis === 'Campuran' && gambar > total) { showAlert('Jumlah gambar melebihi total halaman', 'error'); return; }
   
   const harga = hitungHarga();
+  console.log('3. Harga:', harga);
   
-  // Konfirmasi
   const konfirmasi = confirm(`Apakah Anda akan mencetak ${total} halaman dengan harga Rp ${harga.toLocaleString('id-ID')}?\nMetode: ${metodePembayaran === 'Cash' ? 'Tunai (Langsung Cetak)' : 'QRIS (Tunggu Admin)'}`);
   if (!konfirmasi) return;
   
@@ -366,12 +370,29 @@ async function processTransaction(metodePembayaran) {
   formData.append('metodePembayaran', metodePembayaran);
   formData.append('file', file);
   
+  console.log('4. Sending to:', `${API_BASE_URL}/api/upload`);
+  
+  // Tambahkan timeout 30 detik
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  
   try {
     const response = await fetch(`${API_BASE_URL}/api/upload`, {
       method: 'POST',
-      body: formData
+      body: formData,
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
+    
+    console.log('5. Response status:', response.status);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
     const result = await response.json();
+    console.log('6. Result:', result);
     
     loading.classList.add('hidden');
     
@@ -384,19 +405,27 @@ async function processTransaction(metodePembayaran) {
           showAlert(`⚠️ Transaksi tersimpan. Mohon hubungi admin untuk cetak manual. ID: ${result.transactionId}`, 'info');
         }
       } else {
-        // Tampilkan QRIS
         document.getElementById('qrisImage').src = STATIC_QRIS;
         qrSection.classList.remove('hidden');
         uploadForm.classList.add('hidden');
         showAlert(`Silakan scan QRIS untuk membayar Rp ${harga.toLocaleString('id-ID')}. Admin akan memproses setelah pembayaran dikonfirmasi.`, 'info');
       }
     } else {
-      showAlert('Error: ' + result.error, 'error');
+      showAlert('Error: ' + (result.error || 'Unknown error'), 'error');
     }
   } catch(err) {
+    clearTimeout(timeoutId);
     loading.classList.add('hidden');
-    showAlert('Koneksi gagal. Pastikan server backend menyala.', 'error');
-    console.error(err);
+    
+    console.error('FETCH ERROR:', err);
+    
+    if (err.name === 'AbortError') {
+      showAlert('⏰ Koneksi timeout (30 detik). Server tidak merespon.', 'error');
+    } else if (err.message.includes('Failed to fetch')) {
+      showAlert('❌ Tidak dapat terhubung ke server. Pastikan backend menyala dan Ngrok berjalan.', 'error');
+    } else {
+      showAlert('❌ Error: ' + err.message, 'error');
+    }
   }
 }
 
